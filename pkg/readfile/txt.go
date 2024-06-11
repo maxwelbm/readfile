@@ -2,6 +2,7 @@ package readfile
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -19,16 +20,45 @@ func readTxtFile(filePath string) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	count := 0
+	var lines []string
+
 	for scanner.Scan() {
-		count += 1
 		line := scanner.Text()
+		lines = append(lines, line)
+	}
 
+	for i, line := range lines {
 		lineSplit := strings.SplitN(line, ",", 2)
-		fmt.Printf("\rTXT   ### Progress: %d - Name: %s, Hash: %s%%", count, lineSplit[0], lineSplit[1])
+		if lineSplit[0] == "KNwqaWGXHd" {
+			lines[i] = "valorescollido"
+			break
+		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatalf("Failed to read file: %s", err)
+	if _, err := file.Seek(0, 0); err != nil {
+		fmt.Errorf("failed to seek to beginning of file: %s", err.Error())
+		return
 	}
+
+	if err := file.Truncate(0); err != nil {
+		fmt.Errorf("failed to truncate file: %s", err)
+		return
+	}
+
+	for _, line := range lines {
+		if _, err := fmt.Fprintln(file, line); err != nil {
+			fmt.Errorf("failed to write line to file: %s", err)
+			return
+		}
+	}
+
+	updatedData, err := json.Marshal(lines)
+	if err != nil {
+		return
+	}
+
+	if err := os.WriteFile(filePath, updatedData, 0644); err != nil {
+		return
+	}
+
 }

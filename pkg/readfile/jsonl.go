@@ -1,7 +1,6 @@
 package readfile
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -20,20 +19,38 @@ func readJsonLinesFile(filePath string) {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	count := 0
-	for scanner.Scan() {
-		count += 1
-		line := scanner.Text()
-		var data Data
-		if err := json.Unmarshal([]byte(line), &data); err != nil {
-			log.Printf("Failed to unmarshal JSON: %s", err)
-			return
-		}
-		fmt.Printf("\rJSONL ### Progress: %d - Name: %s, Hash: %s%%", count, data.Name, data.Hash)
+	dataMap := make(map[string]Data)
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&dataMap); err != nil {
+		fmt.Errorf("failed to decode JSON: %s", err)
+		return
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatalf("Failed to read file: %s", err)
+	// Verifica se o item a ser substituído existe no mapa
+	if _, ok := dataMap["KNwqaWGXHd"]; !ok {
+		return
+	}
+
+	// Substitui o item no mapa
+	dataMap["KNwqaWGXHd"] = Data{Name: "novo nome", Hash: "Novo hash"}
+
+	// Move o cursor para o início do arquivo para reescrever o mapa no arquivo
+	if _, err := file.Seek(0, 0); err != nil {
+		return
+	}
+
+	// Trunca o arquivo para limpar o conteúdo antigo
+	if err := file.Truncate(0); err != nil {
+		return
+	}
+
+	// Codifica o mapa atualizado de volta no arquivo JSONL
+	updatedData, err := json.Marshal(dataMap)
+	if err != nil {
+		return
+	}
+
+	if err := os.WriteFile(filePath, updatedData, 0644); err != nil {
+		return
 	}
 }
