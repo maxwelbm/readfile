@@ -30,35 +30,27 @@ func readTxtFile(filePath string) {
 	for i, line := range lines {
 		lineSplit := strings.SplitN(line, ",", 2)
 		if lineSplit[0] == "KNwqaWGXHd" {
-			lines[i] = "valorescollido"
+			lines[i] = "asdfadsadfs"
 			break
 		}
 	}
 
 	if _, err := file.Seek(0, 0); err != nil {
-		fmt.Errorf("failed to seek to beginning of file: %s", err.Error())
 		return
 	}
 
 	if err := file.Truncate(0); err != nil {
-		fmt.Errorf("failed to truncate file: %s", err)
 		return
 	}
 
 	for _, line := range lines {
 		if _, err := fmt.Fprintln(file, line); err != nil {
-			fmt.Errorf("failed to write line to file: %s", err)
 			return
 		}
 	}
 
-	updatedData, err := json.Marshal(lines)
+	_, err = json.Marshal(lines)
 	if err != nil {
 		return
 	}
-
-	if err := os.WriteFile(filePath, updatedData, 0644); err != nil {
-		return
-	}
-
 }
